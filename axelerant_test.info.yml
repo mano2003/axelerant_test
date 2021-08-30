@@ -1,0 +1,9 @@
+name: "Axelerant Test"
+type: module
+description: '[Malick Louis NOEL PIERRE - Axelerant Test]: This module needs to alter the existing Drupal "Site Information" form.'
+core: 8.x
+core_version_requirement: '^8 || ^9'
+package: Axelerant
+dependencies:
+  - system
+  - jsonapi

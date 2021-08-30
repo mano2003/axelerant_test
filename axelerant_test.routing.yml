@@ -1,0 +1,7 @@
+axelerant_test.json_response:
+  path: "page_json/{api_key}/{node_id}"
+  defaults:
+    _controller: 'Drupal\axelerant_test\Controller\JsonApiPageController::getData'
+    _title: "Axelerant Test JSON API"
+  requirements:
+    _permission: "administer site configuration"

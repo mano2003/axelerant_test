@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * @file
+ * Contains axelerant_test.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function axelerant_test_form_alter(array &$form, FormStateInterface &$form_state, $form_id) {
+  if ($form_id == 'system_site_information_settings') {
+    $site_config = \Drupal::state();
+
+    // Requirement #1 : Add a new form text field named "Site API Key" with the default value of “No API Key yet”.
+    $form['site_api_key'] = array(
+      '#title' => t('Site API Key'),
+      '#description' => t('Enter the Site API Key.'),
+      '#type' => 'textfield',
+      '#weight' => '-1', // Put the field on top of the form
+      '#default_value' => $site_config->get('site_api_key', 'No API Key yet.'), // Populate the field with the correct value
+      '#required' => TRUE,
+    );
+    
+    // Requirement #5 : The text of the "Save configuration" button should change to "Update Configuration"
+    $form['actions']['submit']['#value'] = t('Update Configuration');
+    $form['actions']['submit']['#submit'][]  = '_axelerant_test_form_validate'; // Add a validate function to the axelerant_test_form.
+    $form['actions']['submit']['#submit'][]  = '_axelerant_test_form_submit'; // Add a submit handler/function to the axelerant_test_form.
+  }
+}
+
+/**
+ * Custom validate function to axelerant_test_form.
+ */
+function _axelerant_test_form_validate(array &$form, FormStateInterface $form_state, $form_id) {
+  $site_api_key = $form_state->getValue('site_api_key'); // Get the Site API Key submitted
+
+  // Validate Site API Key.
+  if (!preg_match ("/^[a-zA-Z0-9]+$/", $site_api_key)) {
+    $form_state->setErrorByName('site_api_key', t('Please Enter valid API key. Accept only Numeric and characters !!!'));
+  }
+}
+
+/**
+ * Submit handler/function to the form axelerant_test_form.
+ * This function is invoked only when the user clicks Update Configuration button
+ */
+function _axelerant_test_form_submit(array &$form, FormStateInterface $form_state) {
+  // Requirement #2 : When this form is submitted, the value that the user entered for this field should be saved as the system variable named "siteapikey".
+  // Requirement #4 : When this form is visited after the "Site API Key" is saved, the field should be populated with the correct value.
+  $site_api_key = $form_state->getValue('site_api_key'); // Get the Site API Key submitted
+  $site_config = \Drupal::state(); // Get the site config variable
+  $site_config->set('site_api_key', $site_api_key); // Save the Site API Key variable
+  
+  // Requirement #3 : A Drupal message should inform the user that the Site API Key has been saved with that value.
+  \Drupal::messenger()->addMessage(
+    t('The Site API Key has been saved with that value: <strong>@site_api_key</strong>.',
+      array('@site_api_key' => $site_api_key)
+    )
+  );
+}
+
+/**
+ * Implements hook_help().
+ */
+function axelerant_test_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the axelerant_test module.
+    case 'help.page.axelerant_test':
+      $output = '';
+      $output .= '<h2>' . t('About') . '</h2>';
+      $output .= '<h3>' . t('# Background Information:') . '</h3>';
+      $output .= '<p>' . t('When logged in as the administrator, the "Site Information" form can be found at the path /admin/config/system/site-information.') . '</p>';
+      $output .= '<h3>' . t('# Requirements:') . '</h3>';
+      $output .= '<p>' . t('This module needs to alter the existing Drupal "Site Information" form. Specifics:') . '</p>';
+      $output .= '<p>' . t('* A new form text field named "Site API Key" needs to be added to the "Site Information" form with the default value of “No API Key yet”.') . '</p>';
+      $output .= '<p>' . t('* When this form is submitted, the value that the user entered for this field should be saved as the system variable named "site_api_key".') . '</p>';
+      $output .= '<p>' . t('* A Drupal message should inform the user that the Site API Key has been saved with that value.') . '</p>';
+      $output .= '<p>' . t('* When this form is visited after the "Site API Key" is saved, the field should be populated with the correct value.
+') . '</p>';
+      $output .= '<p>' . t('* The text of the "Save configuration" button should change to "Update Configuration".') . '</p>';
+      $output .= '<p>' . t('* This module also provides a URL that responds with a JSON representation of a given node with the content type "page" only if the previously submitted API Key and a node id (nid) of an appropriate node are present, otherwise it will respond with "access denied".') . '</p>';
+      $output .= '<h3>' . t('# Example URL:') . '</h3>';
+      $output .= '<p>' . t('* http://localhost/page_json/FOOBAR12345/17') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function axelerant_test_theme() {
+  return [
+    'axelerant_test' => [
+      'render element' => 'children',
+    ],
+  ];
+}
